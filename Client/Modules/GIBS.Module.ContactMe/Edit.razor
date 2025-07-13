@@ -1,0 +1,135 @@
+@using Oqtane.Modules.Controls
+@using GIBS.Module.ContactMe.Services
+@using GIBS.Module.ContactMe.Models
+
+@namespace GIBS.Module.ContactMe
+@inherits ModuleBase
+@inject IContactMeService ContactMeService
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<Edit> Localizer
+
+@if (_contactForms == null)
+{
+    <p><em>@Localizer["Loading..."]</em></p>
+}
+else
+{
+    @if (_selectedContact != null)
+    {
+        <div class="card my-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">@Localizer["SubmissionDetails.Title"]</h5>
+                <button type="button" class="btn-close" aria-label="Close" @onclick="CloseDetailsView"></button>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>@Localizer["Name"]:</strong> @_selectedContact.Name</p>
+                        <p><strong>@Localizer["Company"]:</strong> @_selectedContact.Company</p>
+                        <p><strong>@Localizer["Address"]:</strong> @_selectedContact.Address</p>
+                        <p><strong>@Localizer["Phone"]:</strong> @_selectedContact.Phone</p>
+                        <p><strong>@Localizer["Email"]:</strong> @_selectedContact.Email</p>
+                        
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>@Localizer["Website"]:</strong> <a href="@_selectedContact.Website" target="_blank">@_selectedContact.Website</a></p>
+                        <p><strong>@Localizer["Interest"]:</strong> @_selectedContact.Interest</p>
+                        <p><strong>@Localizer["SubmittedOn"]:</strong> @_selectedContact.CreatedOn</p>
+                        <p><strong>@Localizer["IPAddress"]:</strong> <a href="https://ip-address-lookup-v4.com/ip/@_selectedContact.IP_Address" target="_blank">@_selectedContact.IP_Address</a></p>
+                    </div>
+                </div>
+                <hr />
+                <p><strong>@Localizer["QuestionComments"]:</strong></p>
+                <p style="white-space: pre-wrap;">@_selectedContact.QuestionComments</p>
+            </div>
+        </div>
+    }
+
+    <br />
+    @if (_contactForms.Count != 0)
+    {
+        <Pager Items="@_contactForms">
+            <Header>
+            <th style="width: 1px;">&nbsp;</th>
+            <th style="width: 1px;">&nbsp;</th>
+            <th>@Localizer["Name"]</th>
+            <th>@Localizer["Company"]</th>
+            <th>@Localizer["Email"]</th>
+            <th>@Localizer["Phone"]</th>
+            <th>@Localizer["SubmittedOn"]</th>
+            </Header>
+            <Row>
+                <td><button class="btn btn-primary btn-sm" @onclick="async () => await LoadRecord(context)">@Localizer["View"]</button></td>
+                <td><ActionDialog Header="@Localizer["Header.Delete"]" Message="@(Localizer["Message.Delete", context.Name])" Action="Delete" Security="SecurityAccessLevel.Edit" Class="btn btn-danger btn-sm" OnClick="@(async () => await Delete(context))" ResourceKey="Delete" Id="@context.ContactMeId.ToString()" /></td>
+                <td>@context.Name</td>
+                <td>@context.Company</td>
+                <td>@context.Email</td>
+                <td>@context.Phone</td>
+                <td>@context.CreatedOn</td>
+            </Row>
+        </Pager>
+    }
+    else
+    {
+        <p>@Localizer["Message.DisplayNone"]</p>
+    }
+    <div class="text-right">
+    <NavLink class="btn btn-secondary" href="@NavigateUrl()">@Localizer["Cancel"]</NavLink>
+    </div>
+}
+
+@code {
+    public override SecurityAccessLevel SecurityAccessLevel => SecurityAccessLevel.Edit;
+    public override string Title => "Manage Contact Form Submissions";
+
+    private List<ContactMe> _contactForms;
+    private ContactMe _selectedContact;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _contactForms = await ContactMeService.GetContactMesAsync(ModuleState.ModuleId);
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Loading Contact Forms {Error}", ex.Message);
+            AddModuleMessage(Localizer["Message.LoadError"], MessageType.Error);
+        }
+    }
+
+    private async Task Delete(ContactMe contact)
+    {
+        try
+        {
+            await ContactMeService.DeleteContactMeAsync(contact.ContactMeId, ModuleState.ModuleId);
+            await logger.LogInformation("Contact Form Deleted {ContactMe}", contact);
+            _contactForms = await ContactMeService.GetContactMesAsync(ModuleState.ModuleId);
+            _selectedContact = null; // Hide details view if the deleted record was selected
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Deleting Contact Form {ContactMe} {Error}", contact, ex.Message);
+            AddModuleMessage(Localizer["Message.DeleteError"], MessageType.Error);
+        }
+    }
+
+    private async Task LoadRecord(ContactMe contact)
+    {
+        try
+        {
+            _selectedContact = await ContactMeService.GetContactMeAsync(contact.ContactMeId, ModuleState.ModuleId);
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Loading Contact Form {ContactMe} {Error}", contact, ex.Message);
+            AddModuleMessage(Localizer["Message.LoadError"], MessageType.Error);
+        }
+    }
+
+    private void CloseDetailsView()
+    {
+        _selectedContact = null;
+    }
+}

@@ -1,0 +1,119 @@
+@using GIBS.Module.ContactMe.Services
+@using Oqtane.Shared
+@using Oqtane.Services
+@using Oqtane.Models
+@using Oqtane.Modules
+@using Oqtane.Providers
+@using Oqtane.Interfaces
+@namespace GIBS.Module.ContactMe
+@inherits ModuleBase
+@inject ISettingService SettingService
+@inject IContactMeService ContactMeService
+
+@inject IStringLocalizer<Settings> Localizer
+
+<div class="container">
+    <div class="row mb-1 align-items-center">
+        <Label Class="col-sm-3" For="instructions" HelpText="Enter instructions to display on the form" ResourceKey="Instructions" ResourceType="@resourceType">Instructions: </Label>
+        <div class="col-sm-9">
+            <textarea id="instructions" class="form-control" @bind="@_instructions" rows="3"></textarea>
+        </div>
+    </div>
+    <div class="row mb-1 align-items-center">
+        <Label Class="col-sm-3" For="successFeedback" HelpText="Enter the feedback message to display after successful submission" ResourceKey="SuccessFeedback" ResourceType="@resourceType">Success Feedback: </Label>
+        <div class="col-sm-9">
+            <textarea id="successFeedback" class="form-control" @bind="@_successFeedback" rows="3"></textarea>
+        </div>
+    </div>
+
+    <div class="row mb-1 align-items-center">
+        <Label Class="col-sm-3" For="sentToUserName" HelpText="Enter sentToUser Name" ResourceKey="SentToUserName" ResourceType="@resourceType">SentToUserName: </Label>
+        <div class="col-sm-9">
+            <input id="sentToUserName" class="form-control" @bind="@_sentToUserName" required />
+        </div>
+    </div>
+
+
+
+    <div class="row mb-1 align-items-center">
+        <Label Class="col-sm-3" For="sentToUserEmail" HelpText="Enter sentToUser Email" ResourceKey="SentToUserEmail" ResourceType="@resourceType">SentToUserEmail: </Label>
+        <div class="col-sm-9">
+            <input id="sentToUserEmail" class="form-control" @bind="@_sentToUserEmail" required />
+        </div>
+    </div>
+
+    <div class="row mb-1 align-items-center">
+        <Label Class="col-sm-3" For="authorizedUser" HelpText="Select the user to manage contact form." ResourceKey="AuthorizedUser" ResourceType="@resourceType">Authorized User: </Label>
+        <div class="col-sm-9">
+            <select id="authorizedUser" class="form-select" @bind="@_authorizedUser">
+                <option value="">-- Select User --</option>
+                @if (_users != null)
+                {
+                    @foreach (var user in _users)
+                    {
+                        <option value="@user.UserId">@user.DisplayName</option>
+                    }
+                }
+            </select>
+        </div>
+    </div>
+    <div class="row mb-1 align-items-center">
+        <Label Class="col-sm-3" For="interestList" HelpText="Enter a comma-separated list of interests for the dropdown" ResourceKey="InterestList" ResourceType="@resourceType">Interest List: </Label>
+        <div class="col-sm-9">
+            <textarea id="interestList" class="form-control" @bind="@_interestList" rows="3"></textarea>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    private string resourceType = "GIBS.Module.ContactMe.Settings, GIBS.Module.ContactMe.Client.Oqtane"; // for localization
+    public override string Title => "ContactMe Settings";
+
+    private string _instructions;
+    private string _successFeedback;
+    //private string _sentToEmail;
+    private string _interestList;
+    private string _sentToUserName;
+    private string _sentToUserEmail;
+    private string _authorizedUser;
+    public List<User> _users { get; set; } = new List<User>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _users = await ContactMeService.GetUsersAsync();
+            Dictionary<string, string> settings = await SettingService.GetModuleSettingsAsync(ModuleState.ModuleId);
+            _instructions = SettingService.GetSetting(settings, "Instructions", "");
+            _successFeedback = SettingService.GetSetting(settings, "SuccessFeedback", "");
+            _authorizedUser = SettingService.GetSetting(settings, "AuthorizedUser", "");
+            _sentToUserName = SettingService.GetSetting(settings, "SentToUserName", "");
+            _sentToUserEmail = SettingService.GetSetting(settings, "SentToUserEmail", "");
+            _interestList = SettingService.GetSetting(settings, "InterestList", "");
+        }
+        catch (Exception ex)
+        {
+            AddModuleMessage(ex.Message, MessageType.Error);
+        }
+    }
+
+    public async Task UpdateSettings()
+    {
+        try
+        {
+            Dictionary<string, string> settings = await SettingService.GetModuleSettingsAsync(ModuleState.ModuleId);
+            SettingService.SetSetting(settings, "Instructions", _instructions);
+            SettingService.SetSetting(settings, "SuccessFeedback", _successFeedback);
+            SettingService.SetSetting(settings, "AuthorizedUser", _authorizedUser);
+            SettingService.SetSetting(settings, "SentToUserEmail", _sentToUserEmail);
+            SettingService.SetSetting(settings, "SentToUserName", _sentToUserName);
+            SettingService.SetSetting(settings, "InterestList", _interestList);
+            await SettingService.UpdateModuleSettingsAsync(settings, ModuleState.ModuleId);
+        }
+        catch (Exception ex)
+        {
+            AddModuleMessage(ex.Message, MessageType.Error);
+        }
+    }
+}

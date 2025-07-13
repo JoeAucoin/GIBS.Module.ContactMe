@@ -1,0 +1,216 @@
+@using System.Net
+@using Oqtane.Modules.Controls
+@using GIBS.Module.ContactMe.Services
+@using GIBS.Module.ContactMe.Models
+@using Oqtane.Services
+@using System.Text
+
+@namespace GIBS.Module.ContactMe
+@inherits ModuleBase
+@inject IContactMeService ContactMeService
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<Index> Localizer
+@inject ISettingService SettingService
+@inject INotificationService NotificationService
+@inject IUserService UserService
+
+<div class="text-center"><ActionLink Action="Edit" Security="SecurityAccessLevel.Edit" Class="btn btn-secondary mb-3" Text="View Records" ResourceKey="Edit" /></div>
+
+@if (_isSubmitted)
+{
+    @if (!string.IsNullOrEmpty(_successFeedback))
+    {
+        <div class="alert alert-success mt-3" style="white-space: pre-wrap;">
+            @_successFeedback
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-success mt-3">
+            @Localizer["Message.SubmissionSuccess"]
+        </div>
+    }
+}
+else
+{
+    <form @ref="form" class="@(validated ? " was-validated" : "needs-validation")" novalidate>
+
+        @if (!string.IsNullOrEmpty(_instructions))
+        {
+            <div class="alert alert-info text-center" style="white-space: pre-wrap;">
+                @_instructions
+            </div>
+        }
+
+        @* Honeypot field for bot protection *@
+        <div style="position: absolute; left: -5000px;" aria-hidden="true">
+            <input type="text" name="fax" tabindex="-1" @bind="@_contactMe.Fax" />
+        </div>
+
+        <div class="container">
+            <div class="row mb-1 align-items-center">
+                <Label Class="col-sm-3" For="name" HelpText="Enter your name" ResourceKey="Name">Your Full Name: </Label>
+                <div class="col-sm-9">
+                    <input id="name" class="form-control" @bind="@_contactMe.Name" required />
+                </div>
+            </div>
+            <div class="row mb-1 align-items-center">
+                <Label Class="col-sm-3" For="company" HelpText="Enter your company" ResourceKey="Company">Company: </Label>
+                <div class="col-sm-9">
+                    <input id="company" class="form-control" @bind="@_contactMe.Company" />
+                </div>
+            </div>
+            <div class="row mb-1 align-items-center">
+                <Label Class="col-sm-3" For="address" HelpText="Enter your address" ResourceKey="Address">Address: </Label>
+                <div class="col-sm-9">
+                    <input id="address" class="form-control" @bind="@_contactMe.Address" />
+                </div>
+            </div>
+            <div class="row mb-1 align-items-center">
+                <Label Class="col-sm-3" For="phone" HelpText="Enter your phone" ResourceKey="Phone">Phone: </Label>
+                <div class="col-sm-9">
+                    <input id="phone" class="form-control" @bind="@_contactMe.Phone" />
+                </div>
+            </div>
+            <div class="row mb-1 align-items-center">
+                <Label Class="col-sm-3" For="email" HelpText="Enter your email" ResourceKey="Email">Email: </Label>
+                <div class="col-sm-9">
+                    <input id="email" class="form-control" @bind="@_contactMe.Email" required />
+                </div>
+            </div>
+            <div class="row mb-1 align-items-center">
+                <Label Class="col-sm-3" For="website" HelpText="Enter your website" ResourceKey="Website">Website: </Label>
+                <div class="col-sm-9">
+                    <input id="website" class="form-control" @bind="@_contactMe.Website" />
+                </div>
+            </div>
+            <div class="row mb-1 align-items-center">
+                <Label Class="col-sm-3" For="interest" HelpText="Select your interest(s)" ResourceKey="Interest">Interest: </Label>
+                <div class="col-sm-9">
+                    @foreach (var interest in _interests)
+                    {
+                        <div class="form-check">
+                            <input id="interest-@interest" type="checkbox" class="form-check-input" checked="@_selectedInterests[interest]" @onchange="(e) => OnInterestChanged(e, interest)" />
+                            <label class="form-check-label" for="interest-@interest">@interest</label>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="row mb-1 align-items-center">
+                <Label Class="col-sm-3" For="questioncomments" HelpText="Enter your questions or comments" ResourceKey="QuestionComments">Questions/Comments: </Label>
+                <div class="col-sm-9">
+                    <textarea id="questioncomments" class="form-control" @bind="@_contactMe.QuestionComments" required></textarea>
+                </div>
+            </div>
+        </div>
+        <button type="button" class="btn btn-success" @onclick="Save">@Localizer["Submit"]</button>
+    </form>
+}
+
+
+@code {
+
+
+
+    public override string RenderMode => RenderModes.Interactive;
+    public override SecurityAccessLevel SecurityAccessLevel => SecurityAccessLevel.View;
+
+    private ElementReference form;
+    private bool validated = false;
+    private ContactMe _contactMe = new();
+    private List<string> _interests = new();
+    private Dictionary<string, bool> _selectedInterests = new();
+    private bool _isSubmitted = false;
+    private string _instructions;
+    private string _successFeedback;
+    private string _sentToUserName;
+    private string _sentToUserEmail;
+    private string _authorizedUser;
+
+    // private readonly INotificationService _notifications;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _contactMe.IP_Address = PageState.RemoteIPAddress;
+        try
+        {
+            var settings = await SettingService.GetModuleSettingsAsync(ModuleState.ModuleId);
+            _instructions = SettingService.GetSetting(settings, "Instructions", "");
+            _successFeedback = SettingService.GetSetting(settings, "SuccessFeedback", "Thank you for your form submission!");
+            _sentToUserEmail = SettingService.GetSetting(settings, "SentToUserEmail", "");
+            _sentToUserName = SettingService.GetSetting(settings, "SentToUserName", "");
+            _authorizedUser = SettingService.GetSetting(settings, "AuthorizedUser", "");
+            var interestList = SettingService.GetSetting(settings, "InterestList", "");
+            if (!string.IsNullOrEmpty(interestList))
+            {
+                _interests = interestList.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                _selectedInterests = _interests.ToDictionary(i => i, i => false);
+            }
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Loading Settings {Error}", ex.Message);
+            AddModuleMessage(Localizer["Message.LoadError"], MessageType.Error);
+        }
+    }
+
+    private void OnInterestChanged(ChangeEventArgs e, string interest)
+    {
+        if (_selectedInterests.ContainsKey(interest))
+        {
+            _selectedInterests[interest] = (bool)e.Value;
+        }
+    }
+
+    private async Task Save()
+    {
+        try
+        {
+            validated = true;
+            var interop = new Oqtane.UI.Interop(JSRuntime);
+            if (await interop.FormValid(form))
+
+            {
+                _contactMe.Name = _contactMe.Name?.Trim();
+                _contactMe.Company = _contactMe.Company?.Trim();
+                _contactMe.Address = _contactMe.Address?.Trim();
+                _contactMe.Phone = _contactMe.Phone?.Trim();
+                _contactMe.Email = _contactMe.Email?.Trim();
+                if (!string.IsNullOrEmpty(_contactMe.Website) && !_contactMe.Website.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !_contactMe.Website.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                {
+                    _contactMe.Website = "https://" + _contactMe.Website;
+                }
+                _contactMe.QuestionComments = _contactMe.QuestionComments?.Trim();
+
+                _contactMe.SendToEmail = _sentToUserEmail.ToString();
+                _contactMe.SendToName = _sentToUserName.ToString();
+                _contactMe.Interest = string.Join(", ", _selectedInterests.Where(i => i.Value).Select(i => i.Key));
+                _contactMe.ModuleId = ModuleState.ModuleId;
+                _contactMe.CreatedBy = PageState.User?.DisplayName.ToString() ?? "anonymous";
+                _contactMe.CreatedOn = DateTime.Now;
+                _contactMe.IP_Address = PageState.RemoteIPAddress;
+                _contactMe.ModifiedBy = PageState.User?.DisplayName.ToString() ?? "anonymous";
+                _contactMe.ModifiedOn = DateTime.Now;
+
+                var newContact = await ContactMeService.AddContactMeAsync(_contactMe);
+                await logger.LogInformation("Contact Form Submitted {ContactMe}", _contactMe);
+                _isSubmitted = true;
+
+            }
+            else
+            {
+                AddModuleMessage(Localizer["Message.SaveValidation"], MessageType.Warning);
+            }
+
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Saving Contact Form {Error}", ex.Message);
+            AddModuleMessage(Localizer["Message.SubmissionError"], MessageType.Error);
+        }
+
+    }
+
+
+
+}
