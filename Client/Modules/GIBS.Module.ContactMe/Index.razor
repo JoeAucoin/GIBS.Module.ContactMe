@@ -54,48 +54,63 @@ else
                     <input id="name" class="form-control" @bind="@_contactMe.Name" required />
                 </div>
             </div>
-            <div class="row mb-1 align-items-center">
-                <Label Class="col-sm-3" For="company" HelpText="Enter your company" ResourceKey="Company">Company: </Label>
-                <div class="col-sm-9">
-                    <input id="company" class="form-control" @bind="@_contactMe.Company" />
+            @if (_showCompany)
+            {
+                <div class="row mb-1 align-items-center">
+                    <Label Class="col-sm-3" For="company" HelpText="Enter your company" ResourceKey="Company">Company: </Label>
+                    <div class="col-sm-9">
+                        <input id="company" class="form-control" @bind="@_contactMe.Company" />
+                    </div>
                 </div>
-            </div>
-            <div class="row mb-1 align-items-center">
-                <Label Class="col-sm-3" For="address" HelpText="Enter your address" ResourceKey="Address">Address: </Label>
-                <div class="col-sm-9">
-                    <input id="address" class="form-control" @bind="@_contactMe.Address" />
+            }
+            @if (_showAddress)
+            {
+                <div class="row mb-1 align-items-center">
+                    <Label Class="col-sm-3" For="address" HelpText="Enter your address" ResourceKey="Address">Address: </Label>
+                    <div class="col-sm-9">
+                        <input id="address" class="form-control" @bind="@_contactMe.Address" />
+                    </div>
                 </div>
-            </div>
-            <div class="row mb-1 align-items-center">
-                <Label Class="col-sm-3" For="phone" HelpText="Enter your phone" ResourceKey="Phone">Phone: </Label>
-                <div class="col-sm-9">
-                    <input id="phone" class="form-control" @bind="@_contactMe.Phone" />
+            }
+            @if (_showPhone)
+            {
+                <div class="row mb-1 align-items-center">
+                    <Label Class="col-sm-3" For="phone" HelpText="Enter your phone" ResourceKey="Phone">Phone: </Label>
+                    <div class="col-sm-9">
+                        <input id="phone" class="form-control" @bind="@_contactMe.Phone" />
+                    </div>
                 </div>
-            </div>
+            }
             <div class="row mb-1 align-items-center">
                 <Label Class="col-sm-3" For="email" HelpText="Enter your email" ResourceKey="Email">Email: </Label>
                 <div class="col-sm-9">
                     <input id="email" class="form-control" @bind="@_contactMe.Email" required />
                 </div>
             </div>
-            <div class="row mb-1 align-items-center">
-                <Label Class="col-sm-3" For="website" HelpText="Enter your website" ResourceKey="Website">Website: </Label>
-                <div class="col-sm-9">
-                    <input id="website" class="form-control" @bind="@_contactMe.Website" />
+            @if (_showWebsite)
+            {
+                <div class="row mb-1 align-items-center">
+                    <Label Class="col-sm-3" For="website" HelpText="Enter your website" ResourceKey="Website">Website: </Label>
+                    <div class="col-sm-9">
+                        <input id="website" class="form-control" @bind="@_contactMe.Website" />
+                    </div>
                 </div>
-            </div>
-            <div class="row mb-1 align-items-center">
-                <Label Class="col-sm-3" For="interest" HelpText="Select your interest(s)" ResourceKey="Interest">Interest: </Label>
-                <div class="col-sm-9">
-                    @foreach (var interest in _interests)
-                    {
-                        <div class="form-check">
-                            <input id="interest-@interest" type="checkbox" class="form-check-input" checked="@_selectedInterests[interest]" @onchange="(e) => OnInterestChanged(e, interest)" />
-                            <label class="form-check-label" for="interest-@interest">@interest</label>
-                        </div>
-                    }
+            }
+            @if (_showInterest)
+            {
+                <div class="row mb-1 align-items-center">
+                    <Label Class="col-sm-3" For="interest" HelpText="Select your interest(s)" ResourceKey="Interest">Interest: </Label>
+                    <div class="col-sm-9">
+                        @foreach (var interest in _interests)
+                        {
+                            <div class="form-check">
+                                <input id="interest-@interest" type="checkbox" class="form-check-input" checked="@_selectedInterests[interest]" @onchange="(e) => OnInterestChanged(e, interest)" />
+                                <label class="form-check-label" for="interest-@interest">@interest</label>
+                            </div>
+                        }
+                    </div>
                 </div>
-            </div>
+            }
             <div class="row mb-1 align-items-center">
                 <Label Class="col-sm-3" For="questioncomments" HelpText="Enter your questions or comments" ResourceKey="QuestionComments">Questions/Comments: </Label>
                 <div class="col-sm-9">
@@ -104,6 +119,7 @@ else
             </div>
         </div>
         <button type="button" class="btn btn-success" @onclick="Save">@Localizer["Submit"]</button>
+        <br />
     </form>
 }
 
@@ -126,6 +142,11 @@ else
     private string _sentToUserName;
     private string _sentToUserEmail;
     private string _authorizedUser;
+    private bool _showCompany;
+    private bool _showAddress;
+    private bool _showPhone;
+    private bool _showWebsite;
+    private bool _showInterest;
 
     // private readonly INotificationService _notifications;
 
@@ -146,6 +167,11 @@ else
                 _interests = interestList.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
                 _selectedInterests = _interests.ToDictionary(i => i, i => false);
             }
+            _showCompany = bool.Parse(SettingService.GetSetting(settings, "ShowCompany", "true"));
+            _showAddress = bool.Parse(SettingService.GetSetting(settings, "ShowAddress", "true"));
+            _showPhone = bool.Parse(SettingService.GetSetting(settings, "ShowPhone", "true"));
+            _showWebsite = bool.Parse(SettingService.GetSetting(settings, "ShowWebsite", "true"));
+            _showInterest = bool.Parse(SettingService.GetSetting(settings, "ShowInterest", "true"));
         }
         catch (Exception ex)
         {

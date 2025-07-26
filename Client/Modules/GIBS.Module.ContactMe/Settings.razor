@@ -63,6 +63,39 @@
             <textarea id="interestList" class="form-control" @bind="@_interestList" rows="3"></textarea>
         </div>
     </div>
+
+
+    <div class="row mb-1 align-items-center">
+        <Label Class="col-sm-3" For="showCompany" HelpText="Show Company field" ResourceKey="ShowCompany" ResourceType="@resourceType">Show Company: </Label>
+        <div class="col-sm-9">
+            <input type="checkbox" id="showCompany" class="form-check-input" @bind="@_showCompany" />
+        </div>
+    </div>
+    <div class="row mb-1 align-items-center">
+        <Label Class="col-sm-3" For="showAddress" HelpText="Show Address field" ResourceKey="ShowAddress" ResourceType="@resourceType">Show Address: </Label>
+        <div class="col-sm-9">
+            <input type="checkbox" id="showAddress" class="form-check-input" @bind="@_showAddress" />
+        </div>
+    </div>
+    <div class="row mb-1 align-items-center">
+        <Label Class="col-sm-3" For="showPhone" HelpText="Show Phone field" ResourceKey="ShowPhone" ResourceType="@resourceType">Show Phone: </Label>
+        <div class="col-sm-9">
+            <input type="checkbox" id="showPhone" class="form-check-input" @bind="@_showPhone" />
+        </div>
+    </div>
+    <div class="row mb-1 align-items-center">
+        <Label Class="col-sm-3" For="showWebsite" HelpText="Show Website field" ResourceKey="ShowWebsite" ResourceType="@resourceType">Show Website: </Label>
+        <div class="col-sm-9">
+            <input type="checkbox" id="showWebsite" class="form-check-input" @bind="@_showWebsite" />
+        </div>
+    </div>
+    <div class="row mb-1 align-items-center">
+        <Label Class="col-sm-3" For="showInterest" HelpText="Show Interest dropdown" ResourceKey="ShowInterest" ResourceType="@resourceType">Show Interest: </Label>
+        <div class="col-sm-9">
+            <input type="checkbox" id="showInterest" class="form-check-input" @bind="@_showInterest" />
+        </div>
+    </div>
+
 </div>
 
 @code {
@@ -78,6 +111,11 @@
     private string _sentToUserEmail;
     private string _authorizedUser;
     public List<User> _users { get; set; } = new List<User>();
+    private bool _showCompany;
+    private bool _showAddress;
+    private bool _showPhone;
+    private bool _showWebsite;
+    private bool _showInterest;
 
     protected override async Task OnInitializedAsync()
     {
@@ -91,6 +129,11 @@
             _sentToUserName = SettingService.GetSetting(settings, "SentToUserName", "");
             _sentToUserEmail = SettingService.GetSetting(settings, "SentToUserEmail", "");
             _interestList = SettingService.GetSetting(settings, "InterestList", "");
+            _showCompany = bool.Parse(SettingService.GetSetting(settings, "ShowCompany", "true"));
+            _showAddress = bool.Parse(SettingService.GetSetting(settings, "ShowAddress", "true"));
+            _showPhone = bool.Parse(SettingService.GetSetting(settings, "ShowPhone", "true"));
+            _showWebsite = bool.Parse(SettingService.GetSetting(settings, "ShowWebsite", "true"));
+            _showInterest = bool.Parse(SettingService.GetSetting(settings, "ShowInterest", "true"));
         }
         catch (Exception ex)
         {
@@ -109,6 +152,11 @@
             SettingService.SetSetting(settings, "SentToUserEmail", _sentToUserEmail);
             SettingService.SetSetting(settings, "SentToUserName", _sentToUserName);
             SettingService.SetSetting(settings, "InterestList", _interestList);
+            SettingService.SetSetting(settings, "ShowCompany", _showCompany.ToString());
+            SettingService.SetSetting(settings, "ShowAddress", _showAddress.ToString());
+            SettingService.SetSetting(settings, "ShowPhone", _showPhone.ToString());
+            SettingService.SetSetting(settings, "ShowWebsite", _showWebsite.ToString());
+            SettingService.SetSetting(settings, "ShowInterest", _showInterest.ToString());
             await SettingService.UpdateModuleSettingsAsync(settings, ModuleState.ModuleId);
         }
         catch (Exception ex)

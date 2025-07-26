@@ -34,7 +34,7 @@ else
                     <div class="col-md-6">
                         <p><strong>@Localizer["Website"]:</strong> <a href="@_selectedContact.Website" target="_blank">@_selectedContact.Website</a></p>
                         <p><strong>@Localizer["Interest"]:</strong> @_selectedContact.Interest</p>
-                        <p><strong>@Localizer["SubmittedOn"]:</strong> @_selectedContact.CreatedOn</p>
+                        <p><strong>@Localizer["SubmittedOn"]:</strong> @_selectedContact.CreatedOn.ToLocalTime()</p>
                         <p><strong>@Localizer["IPAddress"]:</strong> <a href="https://ip-address-lookup-v4.com/ip/@_selectedContact.IP_Address" target="_blank">@_selectedContact.IP_Address</a></p>
                     </div>
                 </div>

@@ -29,8 +29,8 @@ namespace GIBS.Module.ContactMe.Services
         //  private readonly IModuleRepository _moduleRepository;
         //  private readonly ISiteRepository _siteRepository;
         private readonly IUserRepository _userRepository;
-       // private readonly Oqtane.Services.INotificationService _notifications;
-       // private object _notificationService;
+        // private readonly Oqtane.Services.INotificationService _notifications;
+        // private object _notificationService;
 
         public ServerContactMeService(IContactMeRepository ContactMeRepository, INotificationRepository notifications, IUserPermissions userPermissions, ITenantManager tenantManager, ILogManager logger, IHttpContextAccessor accessor, ISettingRepository settingRepository, IModuleRepository moduleRepository, ISiteRepository siteRepository, IUserRepository userRepository)
         {
@@ -88,8 +88,10 @@ namespace GIBS.Module.ContactMe.Services
                 return await Task.FromResult<Models.ContactMe>(null); // Ensure async behavior
             }
 
-            var site = _alias.SiteId; // _siteRepository.GetSite(_alias.SiteId);
-           
+            var site = _alias.SiteId; //
+            var request = _accessor.HttpContext.Request;
+            var mySite = $"{request.Scheme}://{request.Host}{request.PathBase}";
+
             var body = new StringBuilder();
             body.AppendLine($"<p>You have received a new contact form submission:</p>");
             body.AppendLine($"<p><b>Name:</b> {ContactMe.Name}</p>");
@@ -104,6 +106,7 @@ namespace GIBS.Module.ContactMe.Services
             body.AppendLine($"<hr />");
             body.AppendLine($"<p><b>Submitted On:</b> {ContactMe.CreatedOn}</p>");
             body.AppendLine($"<p><b>IP Address:</b> https://ip-address-lookup-v4.com/ip/{ContactMe.IP_Address}</p>");
+            body.AppendLine($"<p><b>Site:</b> " + mySite.ToString() + "</p>");
 
             var sendon = DateTime.UtcNow;
             var sendtoname = ContactMe.SendToName ?? "Contact Form Submission";
@@ -170,6 +173,6 @@ namespace GIBS.Module.ContactMe.Services
             return Task.CompletedTask;
         }
 
-       
+
     }
 }
