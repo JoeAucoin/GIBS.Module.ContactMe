@@ -118,8 +118,8 @@ else
                 </div>
             </div>
         </div>
-        <button type="button" class="btn btn-success" @onclick="Save">@Localizer["Submit"]</button>
-        <br />
+        <div style="width:100%;" class="mb-2 mt-2 text-center"><button type="button" class="btn btn-success" @onclick="Save">@Localizer["Submit"]</button></div>
+      
     </form>
 }
 
@@ -128,7 +128,7 @@ else
 
 
 
-    public override string RenderMode => RenderModes.Interactive;
+    // public override string RenderMode => RenderModes.Interactive;
     public override SecurityAccessLevel SecurityAccessLevel => SecurityAccessLevel.View;
 
     private ElementReference form;

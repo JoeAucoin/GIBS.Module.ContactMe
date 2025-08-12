@@ -123,7 +123,7 @@ namespace GIBS.Module.ContactMe.Services
 
             ContactMe = _ContactMeRepository.AddContactMe(ContactMe);
             _logger.Log(LogLevel.Information, this, LogFunction.Create, "ContactMe Added {ContactMe}", ContactMe);
-
+            _logger.Log(LogLevel.Error, this, LogFunction.Create, "ContactMe Added {ContactMe} {SendToName} {SendToEmail}", ContactMe, sendtoname, sendtoemail);
             var recordID = ContactMe.ContactMeId; // Assuming ContactMe.ContactMeId is set after adding
             var subject = $"Contact Form Submission - " + recordID.ToString();
 
