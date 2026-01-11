@@ -219,6 +219,30 @@ else
                 _contactMe.ModifiedOn = DateTime.Now;
 
                 var newContact = await ContactMeService.AddContactMeAsync(_contactMe);
+
+                var currentUrl = NavigationManager.Uri;
+                var mySite = $"{currentUrl.ToString()}";
+            //    var site = _alias.SiteId; //
+              //  var request = _accessor.HttpContext.Request;
+              //  var mySite = $"{request.Scheme}://{request.Host}{request.PathBase}";
+
+                var body = new StringBuilder();
+                body.AppendLine($"<p>You have received a new contact form submission:</p>");
+                body.AppendLine($"<p><b>Name:</b> {_contactMe.Name}</p>");
+                body.AppendLine($"<p><b>Company:</b> {_contactMe.Company}</p>");
+                body.AppendLine($"<p><b>Address:</b> {_contactMe.Address}</p>");
+                body.AppendLine($"<p><b>Phone:</b> {_contactMe.Phone}</p>");
+                body.AppendLine($"<p><b>Email:</b> {_contactMe.Email}</p>");
+                body.AppendLine($"<p><b>Website:</b> {_contactMe.Website}</p>");
+                body.AppendLine($"<p><b>Interest:</b> {_contactMe.Interest}</p>");
+                body.AppendLine($"<p><b>Questions/Comments:</b></p>");
+                body.AppendLine($"<p>{_contactMe.QuestionComments}</p>");
+                body.AppendLine($"<hr />");
+                body.AppendLine($"<p><b>Submitted On:</b> {_contactMe.CreatedOn}</p>");
+                body.AppendLine($"<p><b>IP Address:</b> https://ip-address-lookup-v4.com/ip/{_contactMe.IP_Address}</p>");
+                body.AppendLine($"<p><b>Site:</b> " + mySite.ToString() + "</p>");
+
+
                 await logger.LogInformation("Contact Form Submitted {ContactMe}", _contactMe);
                 _isSubmitted = true;
 

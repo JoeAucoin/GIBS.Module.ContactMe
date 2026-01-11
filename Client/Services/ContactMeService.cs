@@ -1,10 +1,11 @@
+using GIBS.Module.ContactMe.Models;
+using Oqtane.Models;
+using Oqtane.Services;
+using Oqtane.Shared;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Oqtane.Models;
-using Oqtane.Services;
-using Oqtane.Shared;
 
 namespace GIBS.Module.ContactMe.Services
 {
@@ -43,6 +44,23 @@ namespace GIBS.Module.ContactMe.Services
         public async Task<List<User>> GetUsersAsync()
         {
             return await GetJsonAsync<List<User>>($"{Apiurl}/users");
+        }
+
+        public async Task SendHtmlEmailAsync(string recipientName, string recipientEmail, string bccName, string bccEmail, string replyToName, string replyToEmail, string subject, string htmlMessage)
+        {
+            var request = new EmailRequest
+            {
+                RecipientName = recipientName,
+                RecipientEmail = recipientEmail,
+                BccName = bccName,
+                BccEmail = bccEmail,
+                ReplyToName = replyToName,
+                ReplyToEmail = replyToEmail,
+                Subject = subject,
+                HtmlMessage = htmlMessage
+            };
+
+            await PostJsonAsync($"{Apiurl}/SendEmail", request);
         }
     }
 }

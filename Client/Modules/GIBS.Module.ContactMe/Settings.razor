@@ -43,6 +43,23 @@
     </div>
 
     <div class="row mb-1 align-items-center">
+        <Label Class="col-sm-3" For="bccName" HelpText="Enter BCC Name" ResourceKey="BccName" ResourceType="@resourceType">BCC Name: </Label>
+        <div class="col-sm-9">
+            <input id="bccName" class="form-control" @bind="@_bccName" required />
+        </div>
+    </div>
+
+
+
+    <div class="row mb-1 align-items-center">
+        <Label Class="col-sm-3" For="bccEmail" HelpText="Enter BCC Email" ResourceKey="BccEmail" ResourceType="@resourceType">BCC Email: </Label>
+        <div class="col-sm-9">
+            <input id="bccEmail" class="form-control" @bind="@_bccEmail" required />
+        </div>
+    </div>
+
+
+    <div class="row mb-1 align-items-center">
         <Label Class="col-sm-3" For="authorizedUser" HelpText="Select the user to manage contact form." ResourceKey="AuthorizedUser" ResourceType="@resourceType">Authorized User: </Label>
         <div class="col-sm-9">
             <select id="authorizedUser" class="form-select" @bind="@_authorizedUser">
@@ -109,6 +126,8 @@
     private string _interestList;
     private string _sentToUserName;
     private string _sentToUserEmail;
+    private string _bccName;
+    private string _bccEmail;
     private string _authorizedUser;
     public List<User> _users { get; set; } = new List<User>();
     private bool _showCompany;
@@ -128,6 +147,8 @@
             _authorizedUser = SettingService.GetSetting(settings, "AuthorizedUser", "");
             _sentToUserName = SettingService.GetSetting(settings, "SentToUserName", "");
             _sentToUserEmail = SettingService.GetSetting(settings, "SentToUserEmail", "");
+            _bccName = SettingService.GetSetting(settings, "BccName", "");
+            _bccEmail = SettingService.GetSetting(settings, "BccEmail", "");
             _interestList = SettingService.GetSetting(settings, "InterestList", "");
             _showCompany = bool.Parse(SettingService.GetSetting(settings, "ShowCompany", "true"));
             _showAddress = bool.Parse(SettingService.GetSetting(settings, "ShowAddress", "true"));
@@ -151,6 +172,8 @@
             SettingService.SetSetting(settings, "AuthorizedUser", _authorizedUser);
             SettingService.SetSetting(settings, "SentToUserEmail", _sentToUserEmail);
             SettingService.SetSetting(settings, "SentToUserName", _sentToUserName);
+            SettingService.SetSetting(settings, "BccName", _bccName);
+            SettingService.SetSetting(settings, "BccEmail", _bccEmail);
             SettingService.SetSetting(settings, "InterestList", _interestList);
             SettingService.SetSetting(settings, "ShowCompany", _showCompany.ToString());
             SettingService.SetSetting(settings, "ShowAddress", _showAddress.ToString());

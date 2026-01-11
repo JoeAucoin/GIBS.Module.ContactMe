@@ -48,7 +48,7 @@ else
     <br />
     @if (_contactForms.Count != 0)
     {
-        <Pager Items="@_contactForms">
+        <Pager Items="@_contactForms" SearchProperties="Name,Company">
             <Header>
             <th style="width: 1px;">&nbsp;</th>
             <th style="width: 1px;">&nbsp;</th>
@@ -80,6 +80,7 @@ else
 
 @code {
     public override SecurityAccessLevel SecurityAccessLevel => SecurityAccessLevel.Edit;
+    public override bool UseAdminContainer => false;
     public override string Title => "Manage Contact Form Submissions";
 
     private List<ContactMe> _contactForms;

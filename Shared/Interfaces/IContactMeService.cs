@@ -1,3 +1,4 @@
+using GIBS.Module.ContactMe.Models;
 using Oqtane.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -17,5 +18,8 @@ namespace GIBS.Module.ContactMe.Services
         Task DeleteContactMeAsync(int ContactMeId, int ModuleId);
 
         Task<List<User>> GetUsersAsync();
+
+        // NEW METHOD
+        Task SendHtmlEmailAsync(string recipientName, string recipientEmail, string bccName, string bccEmail, string replyToName, string replyToEmail, string subject, string htmlMessage);
     }
 }

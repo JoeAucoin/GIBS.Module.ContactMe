@@ -1,5 +1,10 @@
+using GIBS.Module.ContactMe.Models;
 using GIBS.Module.ContactMe.Repository;
+using GIBS.Module.ContactMe.Services;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 using Microsoft.AspNetCore.Http;
+using MimeKit;
 using Oqtane.Controllers;
 using Oqtane.Enums;
 using Oqtane.Infrastructure;
@@ -12,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -25,14 +31,11 @@ namespace GIBS.Module.ContactMe.Services
         private readonly IHttpContextAccessor _accessor;
         private readonly Alias _alias;
         private readonly INotificationRepository _notifications;
-        //  private readonly ISettingRepository _settingRepository;
-        //  private readonly IModuleRepository _moduleRepository;
-        //  private readonly ISiteRepository _siteRepository;
         private readonly IUserRepository _userRepository;
-        // private readonly Oqtane.Services.INotificationService _notifications;
-        // private object _notificationService;
+        private readonly ISettingRepository _settings;
 
-        public ServerContactMeService(IContactMeRepository ContactMeRepository, INotificationRepository notifications, IUserPermissions userPermissions, ITenantManager tenantManager, ILogManager logger, IHttpContextAccessor accessor, ISettingRepository settingRepository, IModuleRepository moduleRepository, ISiteRepository siteRepository, IUserRepository userRepository)
+
+        public ServerContactMeService(IContactMeRepository ContactMeRepository, INotificationRepository notifications, IUserPermissions userPermissions, ITenantManager tenantManager, ILogManager logger, IHttpContextAccessor accessor, ISettingRepository settingRepository, IModuleRepository moduleRepository, ISiteRepository siteRepository, IUserRepository userRepository, ISettingRepository settings)
         {
             _ContactMeRepository = ContactMeRepository;
             _userPermissions = userPermissions;
@@ -44,6 +47,8 @@ namespace GIBS.Module.ContactMe.Services
             //_moduleRepository = moduleRepository;
             //_siteRepository = siteRepository;
             _userRepository = userRepository;
+            _settings = settings;
+
         }
 
         public Task<List<User>> GetUsersAsync()
@@ -122,14 +127,24 @@ namespace GIBS.Module.ContactMe.Services
             ContactMe.QuestionComments = WebUtility.HtmlEncode(ContactMe.QuestionComments);
 
             ContactMe = _ContactMeRepository.AddContactMe(ContactMe);
-            _logger.Log(LogLevel.Information, this, LogFunction.Create, "ContactMe Added {ContactMe}", ContactMe);
-            _logger.Log(LogLevel.Error, this, LogFunction.Create, "ContactMe Added {ContactMe} {SendToName} {SendToEmail}", ContactMe, sendtoname, sendtoemail);
+
+           
+
+          //  _logger.Log(LogLevel.Information, this, LogFunction.Create, "ContactMe Added {ContactMe}", ContactMe);
+           
             var recordID = ContactMe.ContactMeId; // Assuming ContactMe.ContactMeId is set after adding
             var subject = $"Contact Form Submission - " + recordID.ToString();
 
+            // Get Module Settings
+            var modulesettings = _settings.GetSettings("Module", ContactMe.ModuleId).ToDictionary(s => s.SettingName, s => s.SettingValue);
+            var bccName = modulesettings.GetValueOrDefault("BccName", "");
+            var bccEmail = modulesettings.GetValueOrDefault("BccEmail", "");
+
+            await SendHtmlEmailAsync(sendtoname, sendtoemail, bccName, bccEmail, ContactMe.Name, ContactMe.Email, subject, body.ToString());
+
             var notification = new Notification(site, sendtoname.ToString(), sendtoemail.ToString(), subject, body.ToString(), sendon);
             _notifications.AddNotification(notification);
-            _logger.Log(LogLevel.Information, this, LogFunction.Create, "Notification Added", notification);
+           // _logger.Log(LogLevel.Information, this, LogFunction.Create, "Notification Added", notification);
 
             //return ContactMe;
             return await Task.FromResult(ContactMe);
@@ -171,6 +186,65 @@ namespace GIBS.Module.ContactMe.Services
                 _logger.Log(LogLevel.Error, this, LogFunction.Security, "Unauthorized ContactMe Delete Attempt {ContactMeId} {ModuleId}", ContactMeId, ModuleId);
             }
             return Task.CompletedTask;
+        }
+
+        public async Task SendHtmlEmailAsync(string recipientName, string recipientEmail, string bccName, string bccEmail, string replyToName, string replyToEmail, string subject, string htmlMessage)
+        {
+           
+
+            // Retrieve Site Settings
+
+            // var settings = _settings.GetSettings(EntityNames.Site, _alias.SiteId).ToList();
+            var settings = _settings.GetSettings(EntityNames.Site, _alias.SiteId, EntityNames.Host, -1).ToList();
+
+
+            string GetSetting(string key, string defaultValue) =>
+                settings.FirstOrDefault(s => s.SettingName == key)?.SettingValue ?? defaultValue;
+
+            string smtpHost = GetSetting("SMTPHost", "");
+            int smtpPort = int.Parse(GetSetting("SMTPPort", "587"));
+            string smtpUserName = GetSetting("SMTPUsername", "");
+            string smtpPassword = GetSetting("SMTPPassword", "");
+            string smtpSender = GetSetting("SMTPSender", smtpUserName);
+            string smtpSSL = GetSetting("SMTPSSL", "false"); // Oqtane often has this setting
+
+            _logger.Log(LogLevel.Information, this, LogFunction.Create, "SMTP Settings: Host={Host}, Port={Port}, User={User}, Password={Password}, Sender={Sender}, SSL={SSL}", smtpHost, smtpPort, smtpUserName, smtpPassword, smtpSender, smtpSSL);
+
+
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress("Webmaster", smtpSender));
+            message.To.Add(new MailboxAddress(recipientName, recipientEmail));
+            message.ReplyTo.Add(new MailboxAddress(replyToName, replyToEmail));
+
+            if (!string.IsNullOrEmpty(bccEmail))
+            {
+                message.Bcc.Add(new MailboxAddress(bccName, bccEmail));
+            }
+
+            message.Subject = subject;
+
+            var bodyBuilder = new BodyBuilder
+            {
+                HtmlBody = htmlMessage,
+                TextBody = "Please view this email in a client that supports HTML."
+            };
+
+            message.Body = bodyBuilder.ToMessageBody();
+
+            using var client = new SmtpClient();
+            client.CheckCertificateRevocation = false;
+
+            // Connect
+            await client.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.Auto);
+
+            // Authenticate
+            if (!string.IsNullOrEmpty(smtpUserName) && !string.IsNullOrEmpty(smtpPassword))
+            {
+                await client.AuthenticateAsync(smtpUserName, smtpPassword);
+            }
+
+            await client.SendAsync(message);
+            await client.DisconnectAsync(true);
         }
 
 
