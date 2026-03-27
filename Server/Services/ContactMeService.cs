@@ -142,9 +142,10 @@ namespace GIBS.Module.ContactMe.Services
 
             await SendHtmlEmailAsync(sendtoname, sendtoemail, bccName, bccEmail, ContactMe.Name, ContactMe.Email, subject, body.ToString());
 
-            var notification = new Notification(site, sendtoname.ToString(), sendtoemail.ToString(), subject, body.ToString(), sendon);
-            _notifications.AddNotification(notification);
-           // _logger.Log(LogLevel.Information, this, LogFunction.Create, "Notification Added", notification);
+            // Log the notification in the database
+            //var notification = new Notification(site, ContactMe.Name, ContactMe.Email,sendtoname.ToString(), sendtoemail.ToString(), subject, body.ToString());
+            //_notifications.AddNotification(notification);
+           
 
             //return ContactMe;
             return await Task.FromResult(ContactMe);
