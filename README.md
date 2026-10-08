@@ -54,6 +54,16 @@ After adding the module, access settings to configure its behavior:
 
 ---
 
+## .NET 10 Upgrade Notes
+
+This module has been upgraded to target **.NET 10**.
+
+- Ensure your local development environment includes the **.NET 10 SDK**.
+- If upgrading from an earlier SDK, run a clean restore and rebuild to refresh package assets.
+- Confirm your Oqtane host and related module dependencies are compatible with .NET 10 before deployment.
+
+---
+
 ## License
 
 This module is licensed under the [MIT License](LICENSE.md).
